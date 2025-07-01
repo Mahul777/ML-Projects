@@ -16,7 +16,8 @@ from dataclasses import dataclass
 
 from src.exception import CustomException
 from src.logger import logging
-
+from src.components.data_transformation import DataTransformation
+from src.components.data_transformation import DataTransformationConfig
 
 # ⚙️ Configuration class for setting paths
 @dataclass
@@ -35,7 +36,7 @@ class DataIngestion:
         logging.info("Entered the data ingestion method or component")
         try:
             # 📥 Step 1: Read the raw dataset
-            df = pd.read_csv("notebook/data/stud.csv") #Here data may come from mongodb/sql/mysql 
+            df = pd.read_csv("notebook/data/stud.csv") #this line need to change if data may come from mongodb/sql/mysql 
             logging.info("Read the dataset as dataframe")
 
             # 📁 Step 2: Create the artifacts directory(folder) if not present
@@ -67,4 +68,7 @@ class DataIngestion:
 # 🧪 Run this file independently to test ingestion
 if __name__ == "__main__":
     obj = DataIngestion()
-    obj.initiate_data_ingestion()
+    train_data,test_data = obj.initiate_data_ingestion()
+
+    data_transformation = DataTransformation()
+    data_transformation.initiate_data_transformation(train_data,test_data)
