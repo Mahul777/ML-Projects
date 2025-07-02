@@ -11,62 +11,64 @@
 
 import os
 import sys
-import dill
 import numpy as np
 import pandas as pd
+import dill
+import pickle
 from sklearn.metrics import r2_score
+from sklearn.model_selection import GridSearchCV
+
 from src.exception import CustomException
+from src.logger import logging
 
-
+# 🚀 Save any Python object to a file using pickle
 def save_object(file_path, obj):
-    """
-    Save any Python object to a specified file path using dill.
-
-    Args:
-        file_path (str): Destination file path (e.g., artifacts/preprocessor.pkl)
-        obj (object): The object to save (e.g., preprocessor, model)
-
-    Raises:
-        CustomException: If saving fails
-    """
     try:
-        # Create the directory if it doesn't exist
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        dir_path = os.path.dirname(file_path)
+        os.makedirs(dir_path, exist_ok=True)
 
-        # Open the file in write-binary mode and dump the object
         with open(file_path, "wb") as file_obj:
-            dill.dump(obj, file_obj)
+            pickle.dump(obj, file_obj)
 
     except Exception as e:
         raise CustomException(e, sys)
 
-def evaluate_model(X_train, y_train, X_test, y_test, models: dict):
-    """
-    Train and evaluate multiple regression models.
 
-    Args:
-        X_train: Training features
-        y_train: Training labels
-        X_test: Testing features
-        y_test: Testing labels
-        models (dict): Dictionary of model_name: model_instance
-
-    Returns:
-        dict: Model name as key and R2 score as value
-    """
+# ✅ Evaluate multiple models and return their R² scores
+def evaluate_model(X_train, y_train, X_test, y_test, models, params):
     try:
         report = {}
+        best_models = {}
 
-        for name, model in models.items():
-            model.fit(X_train, y_train)
-            y_pred_test = model.predict(X_test)
+        for i in range(len(models)):
+            model_name = list(models.keys())[i]
+            model = list(models.values())[i]
+            param = params.get(model_name, {})
 
-            # Calculate R2 score
-            test_model_score = r2_score(y_test, y_pred_test)
+            gs = GridSearchCV(model, param, cv=3, verbose=1, n_jobs=-1)
+            gs.fit(X_train, y_train)
+            best_model = gs.best_estimator_
 
-            report[name] = test_model_score
+            y_train_pred = best_model.predict(X_train)
+            y_test_pred = best_model.predict(X_test)
 
-        return report
+            train_score = r2_score(y_train, y_train_pred)
+            test_score = r2_score(y_test, y_test_pred)
+
+            report[model_name] = test_score
+            best_models[model_name] = best_model
+
+        return report, best_models
 
     except Exception as e:
         raise CustomException(e, sys)
+
+
+# ✅ Load a saved object from file
+def load_object(file_path):
+    try:
+        with open(file_path, "rb") as file_obj:
+            return pickle.load(file_obj)
+    except Exception as e:
+        raise CustomException(e, sys)
+
