@@ -1,5 +1,5 @@
 from flask import Flask, request, render_template
-from predict_pipeline import CustomData, PredictPipeline
+from src.pipeline.predict_pipeline import CustomData, PredictPipeline  # Adjust import if needed
 
 # ✅ Rename app to application (this is needed for AWS Beanstalk)
 application = Flask(__name__)
@@ -16,7 +16,7 @@ def predict_datapoint():
         # 🔄 Get data from form
         data = CustomData(
             gender=request.form.get('gender'),
-            race_ethnicity=request.form.get('ethnicity'),
+            race_ethnicity=request.form.get('race_ethnicity'),  # corrected field name
             parental_level_of_education=request.form.get('parental_level_of_education'),
             lunch=request.form.get('lunch'),
             test_preparation_course=request.form.get('test_preparation_course'),
@@ -25,7 +25,7 @@ def predict_datapoint():
         )
 
         # 🧪 Get the data in DataFrame format
-        final_new_data = data.get_data_as_dataframe()
+        final_new_data = data.get_data_as_data_frame()  # corrected method name
 
         # 🔮 Make prediction
         predict_pipeline = PredictPipeline()
@@ -38,4 +38,4 @@ def predict_datapoint():
 
 # ✅ Only run the app locally (not needed for Elastic Beanstalk)
 if __name__ == '__main__':
-    application.run(debug=True)
+    application.run(host='0.0.0.0', port=5000)
